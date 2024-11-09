@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch with Timer and Gradient Background</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #3498db, #9b59b6, #1abc9c); /* New gradient colors */
+            background-size: 300% 300%;
+            animation: gradientBackground 10s ease infinite;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.5s ease;
+        }
+
+        .stopwatch-container {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 300px;
+        }
+
+        .time {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .buttons {
+            margin-bottom: 20px;
+        }
+
+        .buttons button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .buttons button:hover {
+            background-color: #45a049;
+        }
+
+        .buttons button:active {
+            background-color: #388e3c;
+        }
+
+        .lap-times {
+            margin-top: 20px;
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .lap-times li {
+            background-color: #222;
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        #darkModeToggle {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        #darkModeToggle:hover {
+            background-color: #444;
+        }
+
+        #darkModeToggle:active {
+            background-color: #555;
+        }
+
+        @keyframes gradientBackground {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="stopwatch-container">
+    <div class="time" id="timeDisplay">00:00:00</div>
+    <div class="buttons">
+        <button id="startStopBtn">Start</button>
+        <button id="resetBtn">Reset</button>
+        <button id="lapBtn">Lap</button>
+        <button id="splitBtn">Split</button>
+    </div>
+    <ul class="lap-times" id="lapList"></ul>
+
+    <div>
+        <input type="text" id="countdownInput" placeholder="Set timer (HH:MM:SS)">
+        <button id="startTimerBtn">Start Timer</button>
+        <div id="countdownDisplay">00:00:00</div>
+    </div>
+    <button id="darkModeToggle">Toggle Dark Mode</button>
+</div>
+
+<script>
+    let startTime = 0;
+    let elapsedTime = 0;
+    let running = false;
+    let lapNumber = 1;
+    let interval;
+    let countdownTime = 0;
+    let countdownInterval;
+    let countdownRunning = false;
+
+    const timeDisplay = document.getElementById("timeDisplay");
+    const startStopBtn = document.getElementById("startStopBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const lapBtn = document.getElementById("lapBtn");
+    const splitBtn = document.getElementById("splitBtn");
+    const lapList = document.getElementById("lapList");
+    const countdownInput = document.getElementById("countdownInput");
+    const countdownDisplay = document.getElementById("countdownDisplay");
+    const darkModeToggle = document.getElementById("darkModeToggle");
+
+    function formatTime(ms) {
+        const date = new Date(ms);
+        const hours = String(date.getUTCHours()).padStart(2, "0");
+        const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+        const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+        return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function startStopwatch() {
+        interval = setInterval(function() {
+            elapsedTime = Date.now() - startTime;
+            timeDisplay.textContent = formatTime(elapsedTime);
+        }, 1000);
+    }
+
+    function stopStopwatch() {
+        clearInterval(interval);
+    }
+
+    function toggleStartStop() {
+        if (running) {
+            stopStopwatch();
+            startStopBtn.textContent = "Start";
+        } else {
+            startTime = Date.now() - elapsedTime;
+            startStopwatch();
+            startStopBtn.textContent = "Pause";
+        }
+        running = !running;
+    }
+
+    function resetStopwatch() {
+        stopStopwatch();
+        elapsedTime = 0;
+        timeDisplay.textContent = "00:00:00";
+        startStopBtn.textContent = "Start";
+        running = false;
+        lapList.innerHTML = "";
+        lapNumber = 1;
+    }
+
+    function recordLap() {
+        if (running) {
+            const lapTime = formatTime(elapsedTime);
+            const lapItem = document.createElement("li");
+            lapItem.textContent = `Lap ${lapNumber}: ${lapTime}`;
+            lapList.appendChild(lapItem);
+            lapNumber++;
+        }
+    }
+
+    function startTimer() {
+        const inputTime = countdownInput.value.split(":");
+        if (inputTime.length === 3) {
+            countdownTime = (parseInt(inputTime[0]) * 3600 + parseInt(inputTime[1]) * 60 + parseInt(inputTime[2])) * 1000;
+            countdownRunning = true;
+            countdownInterval = setInterval(function() {
+                countdownTime -= 1000;
+                countdownDisplay.textContent = formatTime(countdownTime);
+                if (countdownTime <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownDisplay.textContent = "00:00:00";
+                    alert("Time's up!");
+                    countdownRunning = false;
+                }
+            }, 1000);
+        }
+    }
+
+    function toggleDarkMode() {
+        const isDarkMode = document.body.style.backgroundColor === 'rgb(26, 26, 26)';
+        if (isDarkMode) {
+            document.body.style.backgroundColor = '#fff';
+            document.body.style.color = '#000';
+            document.querySelector('.stopwatch-container').style.backgroundColor = '#f5f5f5';
+            darkModeToggle.style.backgroundColor = '#444';
+        } else {
+            document.body.style.backgroundColor = '#1a1a1a';
+            document.body.style.color = '#fff';
+            document.querySelector('.stopwatch-container').style.backgroundColor = '#333';
+            darkModeToggle.style.backgroundColor = '#333';
+        }
+    }
+
+    startStopBtn.addEventListener("click", toggleStartStop);
+    resetBtn.addEventListener("click", resetStopwatch);
+    lapBtn.addEventListener("click", recordLap);
+    splitBtn.addEventListener("click", function() {
+        if (running) {
+            alert("Current Split Time: " + formatTime(elapsedTime));
+        }
+    });
+    document.getElementById("startTimerBtn").addEventListener("click", startTimer);
+    darkModeToggle.addEventListener("click", toggleDarkMode);
+
+</script>
+
+</body>
+</html>
